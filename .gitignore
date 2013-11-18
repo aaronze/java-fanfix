@@ -1,3 +1,4 @@
 
 favs.txt
-stories/
+stories
+*.class

@@ -24,7 +24,7 @@ import javax.swing.text.DefaultCaret;
  * @author aaron
  */
 public class MainFrame extends javax.swing.JFrame {
-    ArrayList<Story> stories = new ArrayList<>();
+    static ArrayList<Story> stories = new ArrayList<>();
     DefaultListModel<Story> listModel;
     DefaultComboBoxModel<String> chapterModel;
     Story mainStory;
@@ -76,6 +76,8 @@ public class MainFrame extends javax.swing.JFrame {
         }
         
         setStoriesAsList(stories);
+        
+        refreshFavorites();
     }
     
     public Story getStory(String workID, String title, String... authors) {
@@ -176,8 +178,112 @@ public class MainFrame extends javax.swing.JFrame {
         ignoreChapterBox = false;
     }
     
+    public void cheatRefresh() {
+        new Thread() {
+            @Override
+            public void run() {
+                progressBar.setValue(100 / stories.size());
+                
+                // Create search query
+                for (int j = 0; j < stories.size(); j+=15) {
+                    int size = stories.size()-j;
+                    if (size > 15) size = 15;
+                    
+                    String query = "http://archiveofourown.org/works/search?utf8=%E2%9C%93&work_search[query]=";
+
+                    for (int i = 0; i < size; i++) {
+                        Story story = stories.get(i+j);
+                        query += getStoryPhpCheck(story) + "+||+";
+                    }
+                    query += getStoryPhpCheck(stories.get(stories.size()-1));
+
+                    try {
+                        ArrayList<String> text = Story.getPage(query);
+                        partition(text, j, stories.size());
+                    } catch (Exception e) {
+                        System.out.println(e);
+                    }
+                }
+            }
+        }.start();
+    }
+    
+    public void partition(ArrayList<String> page, int start, int total) throws Exception {
+        String authors = "";
+        String title = "";
+        String workID = "";
+        int chapters;
+        
+        int counter = start;
+        
+        for (int i = 0; i < page.size(); i++) {
+            String line = page.get(i);
+            
+            if (line.contains("<a href=\"/works/")) {
+                int begin = line.indexOf("works/") + 6;
+                int end = line.indexOf("</a>");
+                
+                String s = line.substring(begin, end);
+                s = s.replaceAll("\"", "");
+                
+                String[] st = s.split(">");
+                workID = st[0];
+                title = st[1];
+            }
+            else if (line.contains("rel=\"author\">")) {
+                int begin = line.indexOf("rel=\"author\">") + 13;
+                int end = line.indexOf("</a>");
+                
+                authors = line.substring(begin, end);
+            }
+            else if (line.contains("<dt>Chapters:</dt>")) {
+                line = page.get(++i);
+                
+                int begin = line.indexOf("<dd>") + 4;
+                int end = line.indexOf("</dd>");
+                
+                String chapterText = line.substring(begin, end);
+                
+                String[] st = chapterText.split("/");
+                
+                chapters = new Integer(st[0]).intValue();
+                
+                updateStory(authors, title, workID, chapters);
+                
+                int val = ++counter * 100 / total;
+                progressBar.setValue(val);
+                repaint();
+            }
+        }
+    }
+    
+    public static void updateStory(String authors, String title, String workID, int chapters) {
+        Story story = getStory(workID);
+        
+        if (story != null) {
+            if (story.readChapters < chapters) {
+                story.hasUnread = true;
+            }
+        }
+    }
+    
+    public static Story getStory(String id) {
+        for (Story story : stories) {
+            if (story.workID.equals(id)) return story;
+        }
+        return null;
+    }
+    
+    public String getStoryPhpCheck(Story story) {
+        //       (       workID         &  &           authors             )
+        return "%28" + story.workID + "%26%26" + story.getAuthorLine() + "%29";
+    }
+    
     public void refreshFavorites() {
-        progressBar.getModel().setValue(0);
+        // Cheaty, cheaty cheater-tastic
+        cheatRefresh();
+        
+        /*progressBar.getModel().setValue(0);
         
         new Thread() {
             @Override
@@ -206,7 +312,7 @@ public class MainFrame extends javax.swing.JFrame {
                 }
             }
         }.start();
-        repaint();
+        repaint();*/
     }
     
     public void addNewStory() {
