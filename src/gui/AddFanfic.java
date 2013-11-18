@@ -171,74 +171,7 @@ public class AddFanfic extends javax.swing.JDialog {
         try {
             String line = txtURL.getText();
 
-            String download = "";
-            
-            if (line.contains("downloads")) {
-                if (!line.contains("http://")) return;
-                if (!line.contains(".html")) return;
-                
-                // Valid URL
-                download = line.substring(37, line.length()-5);
-            /*} 
-            else if (line.contains("chapters")) {
-                URL url = new URL(line);
-                
-                BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-                
-                String str;
-                while ((str = reader.readLine()) != null) {
-                    System.out.println(str);
-                    
-                    if (str.contains(".html\">HTML")) {
-                        int begin = str.indexOf("downloads/") + 10;
-                        int end = str.indexOf(".html");
-                        
-                        download = str.substring(begin, end);
-                        break;
-                    }
-                }
-                
-                reader.close();*/
-            } else if (line.contains("works")) {
-                URL url = new URL(line);
-                
-                BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-                
-                String title = "";
-                String authors = "";
-                String workID = "";
-                
-                String str;
-                while ((str = reader.readLine()) != null) {
-                    if (str.contains("<a href=\"/works/")) {
-                        int begin = str.indexOf("works/") + 6;
-                        int end = str.indexOf("</a>");
-                        
-                        String IDAndTitle = str.substring(begin, end);
-                        IDAndTitle = IDAndTitle.replaceAll("\"", "");
-                        
-                        String[] st = IDAndTitle.split(">");
-                        
-                        workID = st[0];
-                        title = st[1];
-                    }
-                    if (str.contains("rel=\"author\">")) {
-                        int begin = str.indexOf("author\">") + 8;
-                        int end = str.indexOf("</a>");
-                        
-                        authors = str.substring(begin, end);
-                        break;
-                    }
-                }
-     
-                download = authors.substring(0, 2) + "/" + authors + "/" + workID + "/" + title;
-                
-                reader.close();
-            } else {
-                return;
-            }
-            
-            System.out.println(download);
+            String download = getDownloadLinkForURL(line);
             
             String[] st = download.split("/");
             String authors = st[1];
@@ -247,23 +180,74 @@ public class AddFanfic extends javax.swing.JDialog {
 
             title = title.replaceAll("%20", " ");
 
-            String[] aList = authors.split("-");
+            //String[] aList = authors.split("-");
 
             txtName.setText(title);
             txtID.setText(workID);
 
-            String authorLine = "";
+            /*String authorLine = "";
             for (int i = 0; i < aList.length-1; i++)
-                authorLine += aList[i] + ",";
-            authorLine += aList[aList.length-1];
+                authorLine += aList[i] + "-";
+            authorLine += aList[aList.length-1];*/
 
-            txtAuthors.setText(authorLine);
+            txtAuthors.setText(authors);
         } catch (Exception e) {
             e.printStackTrace();
         }
         
     }//GEN-LAST:event_txtURLActionPerformed
 
+    public static String getDownloadLinkForURL(String line) throws Exception {
+        String download = "";
+        
+        if (line.contains("downloads")) {
+            if (!line.contains("http://")) return "";
+            if (!line.contains(".html")) return "";
+
+            // Valid URL
+            download = line.substring(37, line.length()-5);
+        } else if (line.contains("works")) {
+            URL url = new URL(line);
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+
+            String title = "";
+            String authors = "";
+            String workID = "";
+
+            String str;
+            while ((str = reader.readLine()) != null) {
+                if (str.contains("<a href=\"/works/")) {
+                    int begin = str.indexOf("works/") + 6;
+                    int end = str.indexOf("</a>");
+
+                    String IDAndTitle = str.substring(begin, end);
+                    IDAndTitle = IDAndTitle.replaceAll("\"", "");
+
+                    String[] st = IDAndTitle.split(">");
+
+                    workID = st[0];
+                    title = st[1];
+                }
+                if (str.contains("rel=\"author\">")) {
+                    int begin = str.indexOf("author\">") + 8;
+                    int end = str.indexOf("</a>");
+
+                    authors = str.substring(begin, end);
+                    break;
+                }
+            }
+
+            download = authors.substring(0, 2) + "/" + authors + "/" + workID + "/" + title;
+
+            reader.close();
+        } else {
+            return "";
+        }
+        
+        return download;
+    }
+    
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         setVisible(false);
     }//GEN-LAST:event_jButton1ActionPerformed

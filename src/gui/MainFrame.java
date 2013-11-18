@@ -9,6 +9,8 @@ package gui;
 import data.Chapter;
 import data.Story;
 import static fanfix.FanFix.cleanString;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -323,6 +325,10 @@ public class MainFrame extends javax.swing.JFrame {
         String author = add.getTxtAuthors();
         String id = add.getTxtID();
         
+        addStory(title, author, id);
+    }
+    
+    public void addStory(String title, String author, String id) {
         if (title.isEmpty()) return;
         if (author.isEmpty()) return;
         if (id.isEmpty()) return;
@@ -335,6 +341,14 @@ public class MainFrame extends javax.swing.JFrame {
         stories.add(story);
         listModel.addElement(story);
         saveFavorites();
+        
+        try {
+            story.download();
+            setMainStory(story);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        repaint();
     }
 
     /**
@@ -360,6 +374,7 @@ public class MainFrame extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         jMenuItem3 = new javax.swing.JMenuItem();
+        jMenuItem5 = new javax.swing.JMenuItem();
         jMenuItem2 = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -406,6 +421,15 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
         jMenu1.add(jMenuItem3);
+
+        jMenuItem5.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_MASK));
+        jMenuItem5.setText("Add From Clipboard");
+        jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem5ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem5);
 
         jMenuItem2.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
         jMenuItem2.setText("Refresh");
@@ -541,6 +565,30 @@ public class MainFrame extends javax.swing.JFrame {
         new About(this, true).setVisible(true);
     }//GEN-LAST:event_jMenuItem4ActionPerformed
 
+    private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
+        // Add from clipboard
+        try {
+            String data = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+            
+            if (data != null) {
+                String downloadLink = AddFanfic.getDownloadLinkForURL(data);
+                
+                String[] st = downloadLink.split("/");
+                String authors = st[1];
+                String workID = st[2];
+                String title = st[3];
+                
+                title = title.replaceAll("%20", " ");
+                
+                addStory(title, authors, workID);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        repaint();
+    }//GEN-LAST:event_jMenuItem5ActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -589,6 +637,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
+    private javax.swing.JMenuItem jMenuItem5;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane5;
