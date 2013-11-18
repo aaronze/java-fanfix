@@ -8,8 +8,12 @@ package data;
 
 import static fanfix.FanFix.cleanString;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.net.URL;
 import java.util.Date;
@@ -71,6 +75,73 @@ public class Story {
             return "* " + title + " *";
         
         return title;
+    }
+    
+    public boolean preLoad() {
+        String authorLine = getAuthorLine();
+        
+        String path = "stories/" + authorLine.substring(0, 2) + "/" + authorLine + "/" + workID + "/";
+        
+        File testFile = new File(path + "0.txt");
+        if (testFile.exists()) {
+            File[] chapterFiles = new File(path).listFiles();
+            Chapter[] chs = new Chapter[chapterFiles.length];
+            
+            for (File f : chapterFiles) {
+                String p = f.getAbsolutePath();
+                
+                int begin = p.lastIndexOf("/") + 1;
+                int end = p.indexOf(".txt");
+                
+                String sub = p.substring(begin, end);
+                if (sub.equalsIgnoreCase("info")) {
+                    continue;
+                }
+                
+                int index = new Integer(sub).intValue();
+                chs[index] = loadChapter(f);
+            }
+            
+            chapters.clear();
+            for (Chapter c : chs) {
+                if (c != null) chapters.add(c);
+            }
+            
+            chaptersWritten = chapters.size();
+            
+            return true;
+        }
+        return false;
+    }
+    
+    public Chapter loadChapter(File file) {
+        try {
+            BufferedReader r = new BufferedReader(new FileReader(file));
+            
+            String l;
+            String text = "";
+            
+            while ((l = r.readLine()) != null)
+                text += l;
+            
+            Chapter c = new Chapter("");
+            c.htmlText = text;
+            return c;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    public String getCleanTitle() {
+        String clean;
+        
+        clean = title.replaceAll("\\.", "");
+        clean = clean.replaceAll("\\?", "");
+        clean = clean.replaceAll("%20", " ");
+        
+        return clean;
     }
     
     public void download() {
@@ -163,6 +234,8 @@ public class Story {
         
         String completed = chapterInfo.split("/")[0];
         chaptersWritten = new Integer(cleanString(completed)).intValue();
+        
+        writeOut();
     }
     
     public String getPathOf(String workID, String title, String... authors) {
@@ -230,5 +303,60 @@ public class Story {
         }
         
         return text;
+    }
+    
+    public String getAuthorLine() {
+        String authorLine = "";
+        
+        for (int i = 0; i < authors.length-1; i++) 
+            authorLine += authors[i] + "-";
+        
+        authorLine += authors[authors.length-1];
+        
+        return authorLine;
+    }
+    
+    private void writeOut() {
+        try {
+            String storiesFolder = "stories/";
+            File sfFile = new File(storiesFolder);
+            if (!sfFile.isDirectory())
+                sfFile.mkdir();
+            
+            String authorLine = getAuthorLine();
+            
+            String path = storiesFolder + authorLine.substring(0, 2) + "/";
+
+            File auFolder = new File(path);
+            if (!auFolder.isDirectory())
+                auFolder.mkdir();
+
+            path += authorLine + "/";
+            File authorFolder = new File(path);
+            if (!authorFolder.isDirectory())
+                authorFolder.mkdir();
+
+            path += workID + "/";
+            File workFolder = new File(path);
+            if (!workFolder.isDirectory())
+                workFolder.mkdir();
+
+            int numChapters = chapters.size();
+
+            for (int i = 0; i < numChapters; i++) {
+                File file = new File(path + i + ".txt");
+
+                Chapter chapter = chapters.get(i);
+
+                PrintWriter writer = new PrintWriter(new FileWriter(file));
+
+                writer.println(chapter.htmlText);
+
+                writer.flush();
+                writer.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

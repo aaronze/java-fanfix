@@ -381,10 +381,18 @@ public class MainFrame extends javax.swing.JFrame {
 
     private void storyListValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_storyListValueChanged
         int index = evt.getLastIndex();
-        Story story = listModel.get(index);
-        story.download();
+        final Story story = listModel.get(index);
+        if (story.preLoad()) {
+            setMainStory(story);
+            repaint();
+        }
         
-        setMainStory(story);
+        new Thread() {
+            @Override
+            public void run() {
+                story.download();
+            }
+        }.start();
     }//GEN-LAST:event_storyListValueChanged
 
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
