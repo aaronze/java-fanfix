@@ -72,7 +72,7 @@ public class MainFrame extends javax.swing.JFrame {
             }
             
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("./favs.txt file missing. Creating a new one");
         }
         
         setStoriesAsList(stories);
@@ -123,12 +123,6 @@ public class MainFrame extends javax.swing.JFrame {
     public void setMainStory(Story story) {
         try {
             mainStory = story;
-
-            /*if (story.chaptersWritten == story.readChapters) {
-                story.currentChapter = story.readChapters;
-            } else {
-                story.currentChapter = story.readChapters;
-            }*/
             
             story.currentChapter = story.readChapters;
 
@@ -180,6 +174,61 @@ public class MainFrame extends javax.swing.JFrame {
         }
         
         ignoreChapterBox = false;
+    }
+    
+    public void refreshFavorites() {
+        progressBar.getModel().setValue(0);
+        
+        new Thread() {
+            @Override
+            public void run() {
+                for (int i = 0; i < stories.size(); i++) {
+                    int val = (i+1) * 100 / stories.size();
+                    progressBar.getModel().setValue(val);
+                    repaint();
+
+                    Story story = stories.get(i);
+                    try {
+                        story.download();
+
+                        int userRead = story.readChapters;
+
+                        String chapterInfo = story.chapterInfo;
+                        String completed = chapterInfo.split("/")[0];
+                        int authorWritten = new Integer(cleanString(completed)).intValue();
+
+                        if (userRead < authorWritten) {
+                            listModel.getElementAt(i).hasUnread = true;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
+        repaint();
+    }
+    
+    public void addNewStory() {
+        AddFanfic add = new AddFanfic(this, true);
+        add.setVisible(true);
+        
+        String title = add.getTxtTitle();
+        String author = add.getTxtAuthors();
+        String id = add.getTxtID();
+        
+        if (title.isEmpty()) return;
+        if (author.isEmpty()) return;
+        if (id.isEmpty()) return;
+        
+        Story story = new Story();
+        story.title = title;
+        story.workID = id;
+        story.authors = author.split("-");
+        
+        stories.add(story);
+        listModel.addElement(story);
+        saveFavorites();
     }
 
     /**
@@ -321,38 +370,12 @@ public class MainFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
-        progressBar.getModel().setValue(0);
-        
-        new Thread() {
-            public void run() {
-                for (int i = 0; i < stories.size(); i++) {
-                    int val = (i+1) * 100 / stories.size();
-                    progressBar.getModel().setValue(val);
-                    repaint();
-
-                    Story story = stories.get(i);
-                    try {
-                        story.download();
-
-                        int userRead = story.readChapters;
-
-                        String chapterInfo = story.chapterInfo;
-                        String completed = chapterInfo.split("/")[0];
-                        int authorWritten = new Integer(cleanString(completed)).intValue();
-
-                        if (userRead < authorWritten) {
-                            listModel.getElementAt(i).hasUnread = true;
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-        repaint();
+        // Refresh button was pressed
+        refreshFavorites();
     }//GEN-LAST:event_jMenuItem2ActionPerformed
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        // Exit button was pressed
         System.exit(0);
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
@@ -365,21 +388,8 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_storyListValueChanged
 
     private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
-        AddFanfic add = new AddFanfic(this, true);
-        add.show();
-        
-        String title = add.getTxtTitle();
-        String author = add.getTxtAuthors();
-        String id = add.getTxtID();
-        
-        Story story = new Story();
-        story.title = title;
-        story.workID = id;
-        story.authors = author.split("-");
-        
-        stories.add(story);
-        listModel.addElement(story);
-        saveFavorites();
+        // Add button was pressed
+        addNewStory();
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
     private void chapterBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chapterBoxActionPerformed

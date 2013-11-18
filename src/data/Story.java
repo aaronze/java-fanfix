@@ -8,13 +8,9 @@ package data;
 
 import static fanfix.FanFix.cleanString;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.ArrayList;
-import static java.lang.System.out;
 import java.net.URL;
 import java.util.Date;
 
@@ -86,6 +82,9 @@ public class Story {
         }
         
         lastDownloaded = time;
+        
+        title = title.replaceAll("\\.", "");
+        title = title.replaceAll("\\?", "");
         
         ArrayList<String> page = getPage(getPathOf(workID, title, authors));
         
@@ -201,7 +200,7 @@ public class Story {
         
         return page;
     }
-    
+
     public static ArrayList<String> removeTags(String s) {
         boolean inTag = false;
         ArrayList<String> text = new ArrayList<>();
