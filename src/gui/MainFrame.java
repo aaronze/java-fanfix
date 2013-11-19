@@ -8,7 +8,6 @@ package gui;
 
 import data.Chapter;
 import data.Story;
-import static fanfix.FanFix.cleanString;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.io.BufferedReader;
@@ -284,37 +283,6 @@ public class MainFrame extends javax.swing.JFrame {
     public void refreshFavorites() {
         // Cheaty, cheaty cheater-tastic
         cheatRefresh();
-        
-        /*progressBar.getModel().setValue(0);
-        
-        new Thread() {
-            @Override
-            public void run() {
-                for (int i = 0; i < stories.size(); i++) {
-                    int val = (i+1) * 100 / stories.size();
-                    progressBar.getModel().setValue(val);
-                    repaint();
-
-                    Story story = stories.get(i);
-                    try {
-                        story.download();
-
-                        int userRead = story.readChapters;
-
-                        String chapterInfo = story.chapterInfo;
-                        String completed = chapterInfo.split("/")[0];
-                        int authorWritten = new Integer(cleanString(completed)).intValue();
-
-                        if (userRead < authorWritten) {
-                            listModel.getElementAt(i).hasUnread = true;
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-        repaint();*/
     }
     
     public void addNewStory() {
@@ -521,6 +489,9 @@ public class MainFrame extends javax.swing.JFrame {
             @Override
             public void run() {
                 story.download();
+                setMainStory(story);
+                updateChapterBox();
+                repaint();
             }
         }.start();
     }//GEN-LAST:event_storyListValueChanged
